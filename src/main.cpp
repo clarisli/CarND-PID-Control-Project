@@ -4,6 +4,9 @@
 #include "PID.h"
 #include <math.h>
 
+const double min_target_speed = 30;
+const double adaptive_speed = 30;
+const double steering_gain = 2.85;
 // for convenience
 using json = nlohmann::json;
 
@@ -28,14 +31,31 @@ std::string hasData(std::string s) {
   return "";
 }
 
+double limit(double value) {
+  double max = 1.0;
+  double min = -1.0;
+  if (value > max) {
+    value = max;
+  } else if (value < min) {
+    value = min;
+  }
+
+  return value;
+}
+
 int main()
 {
   uWS::Hub h;
 
-  PID pid;
-  // TODO: Initialize the pid variable.
+  PID steer_pid;
+  steer_pid.Init(0.114690, 0.000000, 2.045754);
+  PID speed_pid;
+  speed_pid.Init(0.121535, 0.006990, 0.942458);
+  double speed_value = 0.0;
 
-  h.onMessage([&pid](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+  // TODO: Initialize another pid for speed
+
+  h.onMessage([&steer_pid, &speed_pid, &speed_value](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -50,20 +70,33 @@ int main()
           double cte = std::stod(j[1]["cte"].get<std::string>());
           double speed = std::stod(j[1]["speed"].get<std::string>());
           double angle = std::stod(j[1]["steering_angle"].get<std::string>());
-          double steer_value;
+          double steer_value = 0.0;
           /*
-          * TODO: Calcuate steering value here, remember the steering value is
+          * TCalcuate steering value here, remember the steering value is
           * [-1, 1].
           * NOTE: Feel free to play around with the throttle and speed. Maybe use
           * another PID controller to control the speed!
           */
-          
-          // DEBUG
-          std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
+          steer_pid.UpdateError(cte);
+          steer_value = limit(steer_value - steer_pid.TotalError());
+          steer_pid.Twiddle();
 
+
+          //Calculate throttle value here, limit it to [-1, 1]
+          double target_speed = adaptive_speed*(1.0 - steering_gain*fabs(steer_value)) + min_target_speed;
+          double speed_error = speed - target_speed;
+          speed_pid.UpdateError(speed_error);
+          speed_value = limit(speed_value - speed_pid.TotalError());
+          speed_pid.Twiddle();
+
+          // DEBUG
+          std::cout << "Steer PID Kp: " << steer_pid.Kp << ", Ki: " << steer_pid.Ki << ", Kd: " << steer_pid.Kd << std::endl;
+          std::cout << "Speed PID Kp: " << speed_pid.Kp << ", Ki: " << speed_pid.Ki << ", Kd: " << speed_pid.Kd << std::endl;
+          std::cout << "Steer CTE: " << cte << " Steering Value: " << steer_value << std::endl;
+          std::cout << "speed error: " << speed_error << " Speed Value: " << speed_value << std::endl;
           json msgJson;
           msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = 0.3;
+          msgJson["throttle"] = speed_value;
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);

@@ -6,9 +6,6 @@
 const double tolerance = 0.0001;
 const int update_count_threshold = 100;
 
-/*
-* TODO: Complete the PID class.
-*/
 
 PID::PID() {}
 
@@ -60,8 +57,6 @@ double PID::TotalError() {
 
 void PID::Twiddle() {
 
-	std::cout << "Twiddle: " << update_count << ", threshold:" << update_count_threshold << endl; 
-
 	if (update_count < update_count_threshold) {
 		return;
 	}
@@ -70,9 +65,7 @@ void PID::Twiddle() {
 
 	vector<double> p { Kp, Kd, Ki};
 	double sum_dp = dp[0] + dp[1] + dp[2];
-	std::cout << "sum dp: " << sum_dp << endl; 
 	if (sum_dp > tolerance) {
-			std::cout << "twiddle: " << twiddle_state << ", current_error: " << current_error << ", best_error: " << best_error << endl;
 			switch (twiddle_state) {
 				case Uninitialized:
 					p[optimize_index] += dp[optimize_index];
@@ -109,9 +102,7 @@ void PID::Twiddle() {
 			Kp = p[0];
     		Kd = p[1];
 			Ki = p[2];
-			// p_error = 0.0;
-			// i_error = 0.0;
-			// d_error = 0.0;
+
 	}
 }
 

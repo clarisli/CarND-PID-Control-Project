@@ -66,42 +66,42 @@ void PID::Twiddle() {
 	vector<double> p { Kp, Kd, Ki};
 	double sum_dp = dp[0] + dp[1] + dp[2];
 	if (sum_dp > tolerance) {
-			switch (twiddle_state) {
-				case Uninitialized:
-					p[optimize_index] += dp[optimize_index];
-					twiddle_state = AddDP;
-					break;
-				case AddDP:
-					if (current_error < best_error) {
-						best_error = current_error;
-						dp[optimize_index] *= 1.1;
-						twiddle_state = Done;
-					} else {
-						p[optimize_index] -= 2* dp[optimize_index];
-						twiddle_state = MinusDP;
-					}
-					break;
-				case MinusDP:
-					if (current_error < best_error) {
-						best_error = current_error;
-						dp[optimize_index] *= 1.1;
-					} else {
-						p[optimize_index] += dp[optimize_index];
-						dp[optimize_index] *= 0.9;
-					}
-					twiddle_state = Done;
-					break;
-				case Done:
-					optimize_index = (optimize_index+1) % p.size();
-					twiddle_state = Uninitialized; 
-					update_count = 0;
-					total_error = 0;
-					break;
+		switch (twiddle_state) {
+			case Uninitialized:
+			p[optimize_index] += dp[optimize_index];
+			twiddle_state = AddDP;
+			break;
+			case AddDP:
+			if (current_error < best_error) {
+				best_error = current_error;
+				dp[optimize_index] *= 1.1;
+				twiddle_state = Done;
+			} else {
+				p[optimize_index] -= 2* dp[optimize_index];
+				twiddle_state = MinusDP;
 			}
+			break;
+			case MinusDP:
+			if (current_error < best_error) {
+				best_error = current_error;
+				dp[optimize_index] *= 1.1;
+			} else {
+				p[optimize_index] += dp[optimize_index];
+				dp[optimize_index] *= 0.9;
+			}
+			twiddle_state = Done;
+			break;
+			case Done:
+			optimize_index = (optimize_index+1) % p.size();
+			twiddle_state = Uninitialized; 
+			update_count = 0;
+			total_error = 0;
+			break;
+		}
 
-			Kp = p[0];
-    		Kd = p[1];
-			Ki = p[2];
+		Kp = p[0];
+		Kd = p[1];
+		Ki = p[2];
 
 	}
 }

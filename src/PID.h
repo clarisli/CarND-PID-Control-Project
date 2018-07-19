@@ -19,8 +19,8 @@ private:
    AddDP,
    MinusDP,
    Done
-  } twiddle_state; 
-  vector<double> dp;
+ } twiddle_state; 
+ vector<double> dp;
 
 public:
   /*
